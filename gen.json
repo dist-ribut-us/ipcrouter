@@ -1,0 +1,8 @@
+{
+  "Package": "ipcrouter",
+  "TSMaps": [{
+    "Key":"uint32",
+    "Val":"Handler",
+    "Name": "handlers"
+  }]
+}
