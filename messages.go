@@ -5,6 +5,7 @@ import (
 	"github.com/dist-ribut-us/ipc"
 	"github.com/dist-ribut-us/log"
 	"github.com/dist-ribut-us/message"
+	"github.com/dist-ribut-us/overlay/overlaymessages"
 	"github.com/dist-ribut-us/rnet"
 )
 
@@ -88,7 +89,7 @@ func (b *Base) Respond(body interface{}) {
 	}
 	r.SetBody(body)
 
-	log.Info(b.IsFromNet(), b.Addrpb)
+	log.Debug(b.IsFromNet(), b.Addrpb)
 
 	if b.IsFromNet() {
 		r.SetFlag(message.ToNet)
@@ -150,6 +151,6 @@ func (i *Router) RegisterWithOverlay(serviceID uint32, overlay rnet.Port) {
 	i.
 		Base(message.RegisterService, serviceID).
 		To(overlay).
-		SetService(message.OverlayService).
+		SetService(overlaymessages.ServiceID).
 		Send(nil)
 }

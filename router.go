@@ -81,7 +81,7 @@ func (i *Router) Register(service uint32, handler Handler) {
 }
 
 func (i *Router) handler(pkg *ipc.Package) {
-	log.Info("got_package", i.Port())
+	log.Debug("got_package", i.Port())
 
 	b := i.toBase(pkg)
 	if b == nil {
