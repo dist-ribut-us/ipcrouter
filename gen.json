@@ -1,8 +1,30 @@
 {
   "Package": "ipcrouter",
-  "TSMaps": [{
-    "Key":"uint32",
-    "Val":"Handler",
-    "Name": "handlers"
-  }]
+  "TSMaps": [
+  	{
+	    "Key":"uint32",
+	    "Val":"ResponseCallback",
+	    "Name": "callbacks"
+	  },{
+	    "Key":"uint32",
+	    "Val":"NetResponseCallback",
+	    "Name": "netcallbacks"
+	  },{
+	    "Key":"uint32",
+	    "Val":"QueryService",
+	    "Name": "queryServices"
+	  },{
+	    "Key":"uint32",
+	    "Val":"CommandService",
+	    "Name": "commandServices"
+	  },{
+	    "Key":"uint32",
+	    "Val":"NetQueryService",
+	    "Name": "netQueryServices"
+	  },{
+	    "Key":"uint32",
+	    "Val":"NetCommandService",
+	    "Name": "netCommandServices"
+	  }
+	]
 }
