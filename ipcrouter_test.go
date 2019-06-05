@@ -1,27 +1,20 @@
-package ipcroutertest
+package ipcrouter_test
 
 import (
 	"github.com/dist-ribut-us/ipcrouter"
-	"github.com/dist-ribut-us/ipcrouter/testservice"
-	"github.com/dist-ribut-us/log"
 	"github.com/dist-ribut-us/message"
-	"github.com/dist-ribut-us/rnet"
+	"github.com/dist-ribut-us/testutil"
+	"github.com/dist-ribut-us/testutil/servicetest"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-var getPort = rnet.NewPortIncrementer(5555)
-
-func init() {
-	log.Mute()
-}
-
 func TestCommand(t *testing.T) {
-	service, err := testservice.New(12345, getPort.Next())
+	service, err := servicetest.Mock(12345)
 	assert.NoError(t, err)
 
-	sender, err := ipcrouter.New(getPort.Next())
+	sender, err := ipcrouter.New(testutil.GetPort())
 	assert.NoError(t, err)
 
 	go service.Run()
@@ -29,7 +22,7 @@ func TestCommand(t *testing.T) {
 
 	msg := sender.
 		Command(message.Test, "this is a test").
-		To(service.Port()).
+		To(service.GetPort()).
 		SetService(service.ServiceID())
 	id := msg.GetId()
 	msg.Send(nil)
@@ -45,9 +38,9 @@ func TestCommand(t *testing.T) {
 }
 
 func TestQueryAndCallback(t *testing.T) {
-	s1, err := testservice.New(6789, getPort.Next())
+	s1, err := servicetest.Mock(6789)
 	assert.NoError(t, err)
-	s2, err := testservice.New(1111, getPort.Next())
+	s2, err := servicetest.Mock(1111)
 	assert.NoError(t, err)
 
 	go s1.Run()
@@ -57,7 +50,7 @@ func TestQueryAndCallback(t *testing.T) {
 
 	s2.Router.
 		Query(message.Test, "query").
-		To(s1.Port()).
+		To(s1.GetPort()).
 		SetService(s1.ServiceID()).
 		Send(s2.Responder)
 
@@ -78,14 +71,14 @@ func TestQueryAndCallback(t *testing.T) {
 }
 
 func TestSamePort(t *testing.T) {
-	sA, err := testservice.New(111111, getPort.Next())
+	sA, err := servicetest.Mock(111111)
 	assert.NoError(t, err)
-	sB, err := testservice.NewWithRouter(222222, sA.Router)
+	sB, err := servicetest.MockWithRouter(222222, sA.Router)
 	assert.NoError(t, err)
-	sC, err := testservice.New(333333, getPort.Next())
+	sC, err := servicetest.Mock(333333)
 	assert.NoError(t, err)
 
-	assert.Equal(t, sA.Port(), sB.Port())
+	assert.Equal(t, sA.GetPort(), sB.GetPort())
 
 	go sA.Run()
 	defer sA.Stop()
@@ -95,7 +88,7 @@ func TestSamePort(t *testing.T) {
 	msg := []byte{1, 2, 3, 4, 5}
 	sA.Router.
 		Command(message.Test, msg).
-		To(sB.Port()).
+		To(sB.GetPort()).
 		SetService(sB.ServiceID()).
 		Send(nil)
 
@@ -109,7 +102,7 @@ func TestSamePort(t *testing.T) {
 
 	sA.Router.
 		Command(message.Test, msg).
-		To(sC.Port()).
+		To(sC.GetPort()).
 		SetService(sC.ServiceID()).
 		Send(nil)
 

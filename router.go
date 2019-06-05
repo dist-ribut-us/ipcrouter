@@ -48,8 +48,8 @@ func (i *Router) Run() { i.ipc.Run() }
 // IsRunning indicates if the listen loop is running
 func (i *Router) IsRunning() bool { return i.ipc.IsRunning() }
 
-// Port returns the UDP port
-func (i *Router) Port() rnet.Port { return i.ipc.Port() }
+// GetPort returns the UDP port
+func (i *Router) GetPort() rnet.Port { return i.ipc.GetPort() }
 
 // String returns the address of the process
 func (i *Router) String() string { return i.ipc.String() }
@@ -67,7 +67,7 @@ func (i *Router) Close() error { return i.ipc.Close() }
 // Send exposes a raw method for sending
 func (i *Router) Send(port rnet.Port, msg *message.Header) {
 	id := msg.Id
-	if port == i.ipc.Port() {
+	if port == i.ipc.GetPort() {
 		go i.baseHandler(&base{
 			port:   port,
 			proc:   i,
@@ -75,7 +75,6 @@ func (i *Router) Send(port rnet.Port, msg *message.Header) {
 		})
 		return
 	}
-
 	msg.Id = 0
 	i.ipc.Send(id, msg.Marshal(), port)
 }
@@ -98,7 +97,7 @@ func (i *Router) Register(service Service) error {
 	if nss, ok := service.(NetSenderService); ok {
 		i.netSenderService = nss
 		if p, ok := nss.(rnet.Porter); ok {
-			i.NetSenderPort = p.Port()
+			i.NetSenderPort = p.GetPort()
 		}
 		registered = true
 	}
@@ -120,7 +119,7 @@ func (i *Router) Register(service Service) error {
 	}
 
 	if nqs, ok := service.(NetQueryService); ok {
-		log.Info("NetQueryService")
+		log.Info("NetQueryService", service.ServiceID(), i.GetPort())
 		if _, taken := i.netQueryServices.get(sid); taken {
 			return ErrNetQueryServiceTaken
 		}
@@ -144,7 +143,7 @@ func (i *Router) Register(service Service) error {
 }
 
 func (i *Router) handler(pkg *ipc.Package) {
-	log.Debug("got_package", i.Port())
+	log.Debug("got_package", i.GetPort())
 
 	b := i.toBase(pkg)
 	if b == nil {
@@ -181,14 +180,15 @@ func (i *Router) baseHandler(b *base) {
 		if b.IsQuery() {
 			if handler, ok := i.netQueryServices.get(b.Service); ok {
 				handler.NetQueryHandler(netQuery{b})
+				return
 			}
 		} else {
 			if handler, ok := i.netCommandServices.get(b.Service); ok {
 				handler.NetCommandHandler(netCommand{b})
+				return
 			}
 		}
-		log.Info(log.Lbl("no_net_handler_or_callback"), b.IsResponse(), b.Id, b.Service, b.port)
-		return
+		log.Info(log.Lbl("no_net_handler_or_callback"), b.IsResponse(), b.IsQuery(), b.Id, b.Service, b.port, i.GetPort())
 	}
 
 	if b.IsQuery() {

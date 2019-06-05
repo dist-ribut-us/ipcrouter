@@ -5,7 +5,6 @@ import (
 	"github.com/dist-ribut-us/ipc"
 	"github.com/dist-ribut-us/log"
 	"github.com/dist-ribut-us/message"
-	"github.com/dist-ribut-us/overlay/overlaymessages"
 	"github.com/dist-ribut-us/rnet"
 	"github.com/golang/protobuf/proto"
 )
@@ -24,7 +23,7 @@ func (i *Router) toBase(m *ipc.Package) *base {
 	return &base{
 		Header: h,
 		proc:   i,
-		port:   m.Addr.Port(),
+		port:   m.Addr.GetPort(),
 	}
 }
 
@@ -45,7 +44,7 @@ type baseIfc interface {
 	BodyToUint32() uint32
 	Unmarshal(proto.Message) error
 	GetId() uint32
-	Port() rnet.Port
+	GetPort() rnet.Port
 }
 
 // Sender is a message as it's being built, it can be sent.
@@ -191,7 +190,7 @@ func (b *base) SetAddr(addr *rnet.Addr) Sender {
 }
 
 func (b *base) GetRouterPort() rnet.Port {
-	return b.proc.Port()
+	return b.proc.GetPort()
 }
 
 func (b *base) GetHeader() *message.Header {
@@ -210,9 +209,9 @@ func (b *base) SetService(service uint32) Sender {
 	return b
 }
 
-// Port returns the base port - this is the ipc port that the message came from
+// GetPort returns the base port - this is the ipc port that the message came from
 // or that it is sent to send to.
-func (b *base) Port() rnet.Port {
+func (b *base) GetPort() rnet.Port {
 	return b.port
 }
 
@@ -268,13 +267,13 @@ func (b *base) Send(callback ResponseCallback) {
 		go b.proc.removeCallback(id)
 	}
 
-	if b.port == b.proc.Port() {
+	if b.port == b.proc.GetPort() {
 		go b.proc.baseHandler(b)
 		return
 	}
 
 	b.Id = 0
-	b.proc.ipc.Send(id, b.Marshal(), b.Port())
+	b.proc.ipc.Send(id, b.Marshal(), b.GetPort())
 }
 
 func (b *base) SendToNet(netAddr *rnet.Addr, callback NetResponseCallback) {
@@ -290,23 +289,5 @@ func (b *base) SendToNet(netAddr *rnet.Addr, callback NetResponseCallback) {
 	}
 
 	b.Id = 0
-	b.proc.ipc.Send(id, b.Marshal(), b.Port())
-}
-
-// RequestServicePort is a shorthand to request a service port from pool.
-func (i *Router) RequestServicePort(serviceName string, pool rnet.Port, callback ResponseCallback) {
-	i.
-		Query(message.GetPort, serviceName).
-		To(pool).
-		SetService(message.PoolService).
-		Send(callback)
-}
-
-// RegisterWithOverlay is a shorthand to register a service with overlay.
-func (i *Router) RegisterWithOverlay(serviceID uint32, overlay rnet.Port) {
-	i.
-		Command(message.RegisterService, serviceID).
-		To(overlay).
-		SetService(overlaymessages.ServiceID).
-		Send(nil)
+	b.proc.ipc.Send(id, b.Marshal(), b.GetPort())
 }
